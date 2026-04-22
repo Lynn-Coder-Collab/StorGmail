@@ -1,11 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BulkInputForm } from "@/components/BulkInputForm";
 import { PricingCalculator } from "@/components/PricingCalculator";
 import { DepositTable } from "@/components/DepositTable";
-import { getDeposits, getCurrentUser } from "@/lib/store";
 import { formatRupiah } from "@/lib/eternix";
+import { useAuth } from "@/hooks/use-auth";
+import { getUserDeposits, getUserProfile } from "@/lib/deposit.functions";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -19,11 +23,50 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
-  const user = getCurrentUser();
-  const deposits = getDeposits().filter((d) => d.userId === user.uid);
+  const { user, session, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<Tables<"profiles"> | null>(null);
+  const [deposits, setDeposits] = useState<Tables<"deposits">[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user || !session) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    async function fetchData() {
+      try {
+        const headers = { Authorization: `Bearer ${session!.access_token}` };
+        const [profileRes, depositsRes] = await Promise.all([
+          getUserProfile({ headers }),
+          getUserDeposits({ headers }),
+        ]);
+        setProfile(profileRes.profile);
+        setDeposits(depositsRes.deposits);
+      } catch (e) {
+        console.error("Failed to fetch data", e);
+      }
+      setLoading(false);
+    }
+    fetchData();
+  }, [user, session, authLoading, refreshKey, navigate]);
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const balance = profile?.balance ?? 0;
+  const email = user.email ?? "";
 
   return (
-    <div className="min-h-screen bg-background" key={refreshKey}>
+    <div className="min-h-screen bg-background">
       {/* Nav */}
       <header className="border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -36,13 +79,19 @@ function DashboardPage() {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-xs text-muted-foreground">Saldo</p>
-              <p className="text-sm font-bold text-primary">{formatRupiah(user.balance)}</p>
+              <p className="text-sm font-bold text-primary">{formatRupiah(balance)}</p>
             </div>
             <div className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center">
               <span className="text-primary text-xs font-bold">
-                {user.email.charAt(0).toUpperCase()}
+                {email.charAt(0).toUpperCase()}
               </span>
             </div>
+            <button
+              onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>
@@ -61,7 +110,7 @@ function DashboardPage() {
           </div>
           <div className="rounded-xl border border-border bg-card p-5">
             <p className="text-xs text-muted-foreground">Saldo Aktif</p>
-            <p className="text-2xl font-bold text-primary mt-1">{formatRupiah(user.balance)}</p>
+            <p className="text-2xl font-bold text-primary mt-1">{formatRupiah(balance)}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-5">
             <p className="text-xs text-muted-foreground">Pending</p>
@@ -84,7 +133,16 @@ function DashboardPage() {
         {/* Deposit history */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">Riwayat Setoran</h2>
-          <DepositTable deposits={deposits} />
+          <DepositTable deposits={deposits.map((d) => ({
+            id: d.id,
+            customId: d.custom_id,
+            userId: d.user_id,
+            userEmail: email,
+            accountData: (d.account_data as any[]) ?? [],
+            totalPrice: d.total_price,
+            status: d.status as any,
+            timestamp: new Date(d.created_at).getTime(),
+          }))} />
         </div>
       </main>
     </div>
