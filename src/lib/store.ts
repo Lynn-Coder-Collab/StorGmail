@@ -1,5 +1,5 @@
 // Simple in-memory store (will be replaced with Lovable Cloud later)
-import type { Deposit, User } from "./eternix";
+import { generateCustomId, type Deposit, type User } from "./eternix";
 
 let deposits: Deposit[] = [
   {
@@ -44,7 +44,6 @@ export function getDeposits(): Deposit[] {
 }
 
 export function addDeposit(deposit: Omit<Deposit, "id" | "customId" | "timestamp">): Deposit {
-  const { generateCustomId } = require("./eternix");
   const newDeposit: Deposit = {
     ...deposit,
     id: String(nextSeq),
