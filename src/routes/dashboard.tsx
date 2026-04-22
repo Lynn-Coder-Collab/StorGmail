@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { BulkInputForm } from "@/components/BulkInputForm";
 import { PricingCalculator } from "@/components/PricingCalculator";
@@ -7,9 +6,9 @@ import { DepositTable } from "@/components/DepositTable";
 import { formatRupiah } from "@/lib/eternix";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserDeposits, getUserProfile } from "@/lib/deposit.functions";
-import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useNavigate } from "@tanstack/react-router";
+import { AppNavbar } from "@/components/AppNavbar";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -67,34 +66,7 @@ function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <header className="border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">E</span>
-            </div>
-            <span className="font-bold text-lg text-foreground tracking-tight">Eternix</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Saldo</p>
-              <p className="text-sm font-bold text-primary">{formatRupiah(balance)}</p>
-            </div>
-            <div className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center">
-              <span className="text-primary text-xs font-bold">
-                {email.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <button
-              onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppNavbar />
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
         <div>
