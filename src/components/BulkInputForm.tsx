@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { parseAccountData, calculateTotalPrice, formatRupiah, type ParsedAccount } from "@/lib/eternix";
-import { addDeposit } from "@/lib/store";
+import { parseAccountData, calculateTotalPrice, formatRupiah, generateCustomId } from "@/lib/eternix";
+import { createDeposit, getNextSequence } from "@/lib/deposit.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 interface BulkInputFormProps {
@@ -10,24 +11,39 @@ interface BulkInputFormProps {
 export function BulkInputForm({ onSubmit }: BulkInputFormProps) {
   const [raw, setRaw] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const result = parseAccountData(raw);
   const count = result.valid.length;
   const total = calculateTotalPrice(count);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (count === 0) return;
-    addDeposit({
-      userId: "user1",
-      userEmail: "john@example.com",
-      accountData: result.valid,
-      totalPrice: total,
-      status: "pending",
-    });
-    setSubmitted(true);
-    setRaw("");
-    onSubmit?.();
-    setTimeout(() => setSubmitted(false), 3000);
+    setSubmitting(true);
+    setError("");
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session) throw new Error("Not authenticated");
+
+      const { sequence } = await getNextSequence({
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const customId = generateCustomId(sequence);
+
+      await createDeposit({
+        data: { customId, accountData: result.valid, totalPrice: total },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      setSubmitted(true);
+      setRaw("");
+      onSubmit?.();
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch (err: any) {
+      setError(err.message || "Gagal mengirim setoran");
+    }
+    setSubmitting(false);
   }
 
   return (
@@ -67,8 +83,14 @@ export function BulkInputForm({ onSubmit }: BulkInputFormProps) {
         </div>
       )}
 
-      <Button onClick={handleSubmit} disabled={count === 0} className="w-full">
-        {submitted ? "✓ Berhasil Dikirim!" : `Kirim Setoran (${count} akun)`}
+      {error && (
+        <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      <Button onClick={handleSubmit} disabled={count === 0 || submitting} className="w-full">
+        {submitting ? "Mengirim..." : submitted ? "✓ Berhasil Dikirim!" : `Kirim Setoran (${count} akun)`}
       </Button>
     </div>
   );
