@@ -5,8 +5,8 @@ import { DepositTable } from "@/components/DepositTable";
 import { formatRupiah } from "@/lib/eternix";
 import { useAuth } from "@/hooks/use-auth";
 import { getAllDeposits, approveDepositFn, rejectDepositFn, getUserRole } from "@/lib/deposit.functions";
-import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { AppNavbar } from "@/components/AppNavbar";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -102,27 +102,7 @@ function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border sticky top-0 bg-background/80 backdrop-blur-lg z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">E</span>
-            </div>
-            <span className="font-bold text-lg text-foreground tracking-tight">Eternix</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center rounded-full bg-accent/15 border border-accent/30 px-3 py-1 text-xs font-medium text-accent">
-              Admin Mode
-            </span>
-            <button
-              onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppNavbar />
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
         <div>
