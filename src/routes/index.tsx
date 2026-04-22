@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -19,16 +22,10 @@ function Index() {
           </div>
           <div className="flex gap-3">
             <Link
-              to="/dashboard"
-              className="inline-flex items-center rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/admin"
+              to={user ? "/dashboard" : "/auth"}
               className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Admin Panel
+              {user ? "Dashboard" : "Masuk"}
             </Link>
           </div>
         </div>
@@ -53,16 +50,10 @@ function Index() {
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              to="/dashboard"
+              to={user ? "/dashboard" : "/auth"}
               className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               Mulai Setor Akun →
-            </Link>
-            <Link
-              to="/admin"
-              className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-6 py-3 text-base font-semibold text-foreground hover:bg-secondary transition-colors"
-            >
-              Admin Panel
             </Link>
           </div>
 
