@@ -52,7 +52,7 @@ export function DepositTable({ deposits, showActions, onApprove, onReject }: Dep
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right text-muted-foreground text-xs">
-                    {new Date(dep.timestamp).toLocaleString("id-ID")}
+                    {new Date(dep.timestamp).toLocaleDateString("id-ID")} {new Date(dep.timestamp).toLocaleTimeString("id-ID", { timeZone: "UTC" })}
                   </td>
                   {showActions && (
                     <td className="px-4 py-3 text-center">
