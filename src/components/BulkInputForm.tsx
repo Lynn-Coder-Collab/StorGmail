@@ -1,22 +1,42 @@
-import { useState } from "react";
-import { parseAccountData, calculateTotalPrice, formatRupiah, generateCustomId } from "@/lib/eternix";
+import { useState, useCallback } from "react";
+import { calculateTotalPrice, formatRupiah, generateCustomId } from "@/lib/eternix";
 import { createDeposit, getNextSequence } from "@/lib/deposit.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Plus, Trash2 } from "lucide-react";
 
 interface BulkInputFormProps {
   onSubmit?: () => void;
 }
 
+interface AccountEntry {
+  email: string;
+  password: string;
+  recovery: string;
+}
+
 export function BulkInputForm({ onSubmit }: BulkInputFormProps) {
-  const [raw, setRaw] = useState("");
+  const [entries, setEntries] = useState<AccountEntry[]>([{ email: "", password: "", recovery: "" }]);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const result = parseAccountData(raw);
-  const count = result.valid.length;
+  const validEntries = entries.filter(e => e.email.trim() && e.password.trim() && e.recovery.trim());
+  const count = validEntries.length;
   const total = calculateTotalPrice(count);
+
+  const updateEntry = useCallback((index: number, field: keyof AccountEntry, value: string) => {
+    setEntries(prev => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
+  }, []);
+
+  const addEntry = useCallback(() => {
+    setEntries(prev => [...prev, { email: "", password: "", recovery: "" }]);
+  }, []);
+
+  const removeEntry = useCallback((index: number) => {
+    setEntries(prev => prev.length <= 1 ? prev : prev.filter((_, i) => i !== index));
+  }, []);
 
   async function handleSubmit() {
     if (count === 0) return;
@@ -31,13 +51,19 @@ export function BulkInputForm({ onSubmit }: BulkInputFormProps) {
       });
       const customId = generateCustomId(sequence);
 
+      const accountData = validEntries.map(e => ({
+        email: e.email.trim(),
+        password: e.password.trim(),
+        recovery: e.recovery.trim(),
+      }));
+
       await createDeposit({
-        data: { customId, accountData: result.valid, totalPrice: total },
+        data: { customId, accountData, totalPrice: total },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
       setSubmitted(true);
-      setRaw("");
+      setEntries([{ email: "", password: "", recovery: "" }]);
       onSubmit?.();
       setTimeout(() => setSubmitted(false), 3000);
     } catch (err: any) {
@@ -50,36 +76,56 @@ export function BulkInputForm({ onSubmit }: BulkInputFormProps) {
     <div className="rounded-xl border border-border bg-card p-6 space-y-4">
       <div>
         <h3 className="text-lg font-semibold text-foreground">Setor Akun Gmail</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Format: <code className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">email|password|recovery</code> (satu per baris)
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">Isi data akun Gmail di bawah ini</p>
       </div>
 
-      <textarea
-        value={raw}
-        onChange={(e) => setRaw(e.target.value)}
-        placeholder={"contoh@gmail.com|password123|081234567890\nlainnya@gmail.com|pass456|recovery@email.com"}
-        rows={8}
-        className="w-full rounded-lg border border-border bg-input px-4 py-3 font-mono text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring resize-none transition"
-      />
+      <div className="space-y-3">
+        {entries.map((entry, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <div className="flex-1 grid grid-cols-3 gap-2">
+              <Input
+                placeholder="Gmail"
+                value={entry.email}
+                onChange={(e) => updateEntry(i, "email", e.target.value)}
+                className="text-sm"
+              />
+              <Input
+                placeholder="Password"
+                value={entry.password}
+                onChange={(e) => updateEntry(i, "password", e.target.value)}
+                className="text-sm"
+              />
+              <Input
+                placeholder="Recovery"
+                value={entry.recovery}
+                onChange={(e) => updateEntry(i, "recovery", e.target.value)}
+                className="text-sm"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => removeEntry(i)}
+              className="mt-2 text-muted-foreground hover:text-destructive transition-colors"
+              disabled={entries.length <= 1}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+      </div>
 
-      {raw.trim() && (
-        <div className="flex items-center gap-4 text-sm">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-primary" />
-            <span className="text-muted-foreground">{count} valid</span>
-          </span>
-          {result.invalid.length > 0 && (
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-destructive" />
-              <span className="text-muted-foreground">{result.invalid.length} invalid</span>
-            </span>
-          )}
-          {count > 0 && (
-            <span className="ml-auto font-semibold text-primary">
-              Estimasi: {formatRupiah(total)}
-            </span>
-          )}
+      <button
+        type="button"
+        onClick={addEntry}
+        className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+      >
+        <Plus className="h-4 w-4" /> Tambah Akun
+      </button>
+
+      {count > 0 && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">{count} akun valid</span>
+          <span className="font-semibold text-primary">Estimasi: {formatRupiah(total)}</span>
         </div>
       )}
 
