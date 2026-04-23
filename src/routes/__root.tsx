@@ -32,11 +32,15 @@ export const Route = createRootRoute({
       { title: "Lovable App" },
       { name: "description", content: "Eternix System - Platform Setoran Akun & SMM Panel" },
       { name: "author", content: "Eternix" },
-      { property: "og:title", content: "Eternix System" },
-      { property: "og:description", content: "Platform Setoran Akun & SMM Panel" },
+      { property: "og:title", content: "Lovable App" },
+      { property: "og:description", content: "Eternix System - Platform Setoran Akun & SMM Panel" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Lovable App" },
+      { name: "twitter:description", content: "Eternix System - Platform Setoran Akun & SMM Panel" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ca051495-458d-423c-ae1a-09dc73334051/id-preview-efe573c6--d87113c7-7ae5-4f58-955b-ad5373de30d1.lovable.app-1776948066487.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ca051495-458d-423c-ae1a-09dc73334051/id-preview-efe573c6--d87113c7-7ae5-4f58-955b-ad5373de30d1.lovable.app-1776948066487.png" },
     ],
     links: [
       {
