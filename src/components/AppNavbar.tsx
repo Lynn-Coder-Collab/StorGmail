@@ -2,65 +2,53 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard, Wallet, History, User, LogOut } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", to: "/dashboard" as const },
-  { label: "Saldo", to: "/saldo" as const },
-  { label: "Riwayat", to: "/riwayat" as const },
-  { label: "Profile", to: "/profile" as const },
+  { label: "Dashboard", to: "/dashboard" as const, icon: LayoutDashboard },
+  { label: "Saldo", to: "/saldo" as const, icon: Wallet },
+  { label: "Riwayat", to: "/riwayat" as const, icon: History },
+  { label: "Profile", to: "/profile" as const, icon: User },
 ];
 
 export function AppNavbar() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const email = user?.email ?? "";
 
   return (
-    <header className="border-b border-border sticky top-0 bg-background/90 backdrop-blur-lg z-10">
-      <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">E</span>
-            </div>
-            <span className="font-bold text-lg text-foreground tracking-tight hidden sm:block">Eternix</span>
-          </Link>
-
-          <nav className="flex items-center gap-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.to;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-primary text-xs font-bold">
-              {email.charAt(0).toUpperCase()}
-            </span>
-          </div>
+    <>
+      {/* Spacer so content doesn't hide behind fixed bottom bar */}
+      <div className="h-16" />
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-lg">
+        <div className="max-w-lg mx-auto flex items-center justify-around py-2">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.to;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
           <button
             onClick={async () => { await supabase.auth.signOut(); navigate({ to: "/auth" }); }}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            Logout
+            <LogOut className="h-5 w-5" />
+            <span>Logout</span>
           </button>
         </div>
-      </div>
-    </header>
+      </nav>
+    </>
   );
 }
