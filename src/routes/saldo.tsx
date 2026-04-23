@@ -85,7 +85,7 @@ function SaldoContent() {
   return (
     <div className="min-h-screen bg-background">
       <AppNavbar />
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+      <main className="max-w-6xl mx-auto px-6 py-8 pb-24 space-y-8">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Saldo</h1>
           <p className="text-muted-foreground mt-1">Informasi saldo akun Anda</p>
