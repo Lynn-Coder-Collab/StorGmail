@@ -148,3 +148,59 @@ export const getNextSequence = createServerFn({ method: "POST" })
       .select("*", { count: "exact", head: true });
     return { sequence: (count ?? 0) + 1 };
   });
+
+// Create withdrawal request
+export const createWithdrawal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      amount: z.number().min(50000),
+      bankName: z.string().min(1).max(100),
+      accountNumber: z.string().min(1).max(50).regex(/^[0-9]+$/),
+      accountHolder: z.string().min(1).max(255),
+    })
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Check balance
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("balance")
+      .eq("user_id", userId)
+      .single();
+    if (!profile || profile.balance < data.amount) {
+      throw new Error("Saldo tidak mencukupi");
+    }
+
+    // Deduct balance
+    await supabaseAdmin
+      .from("profiles")
+      .update({ balance: profile.balance - data.amount })
+      .eq("user_id", userId);
+
+    // Create withdrawal record
+    const { error } = await supabase.from("withdrawals").insert({
+      user_id: userId,
+      amount: data.amount,
+      bank_name: data.bankName,
+      account_number: data.accountNumber,
+      account_holder: data.accountHolder,
+      status: "pending",
+    });
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+// Get user withdrawals
+export const getUserWithdrawals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data, error } = await supabase
+      .from("withdrawals")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return { withdrawals: data ?? [] };
+  });
